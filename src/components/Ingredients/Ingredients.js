@@ -22,29 +22,34 @@ const ingredientReducer = (currentIngredient, action) => {
 const Ingredients = () => {
   const [ userIngredients, dispatch] = useReducer(ingredientReducer, []);
 
-  const { isLoading, error, data, sendRequest } = useHttp();
+  const { isLoading, error, data, sendRequest, extra, identifier } = useHttp();
+
+  useEffect(() => {
+    if(!isLoading && !error && identifier === 'REMOVE_INGREDIENT') {
+      dispatch({ type: 'DELETE', id: extra })
+    } else if(!isLoading && !error && identifier === 'ADD_INGREDIENT') {
+      dispatch({ type: 'ADD', ingredient: { id: data.name, ...extra }})
+    }
+  }, [data, extra, identifier, isLoading, error]);
 
   const addIngredientHandler = useCallback(ingredient => {
-    // dispatchHttp({ type: 'SEND'});
-    fetch('https://react-hook-update-c7bff.firebaseio.com//ingredients.json', {
-      method: 'POST',
-      body: JSON.stringify(ingredient),
-      headers: { 'Content-Type': 'application/json' }
-    })
-      .then(response => {
-        // dispatchHttp({ type: 'RESPONSE'});
-        return response.json();
-      })
-      .then(responseData => {
-        dispatch({ type: 'ADD', ingredient: { id: responseData.name, ...ingredient }})
-      });
-  }, []);
+    sendRequest(`https://react-hook-update-c7bff.firebaseio.com//ingredients.json`,
+      'POST',
+      JSON.stringify(ingredient),
+      ingredient,
+      'ADD_INGREDIENT'
+     )
+  }, [sendRequest]);
 
   const filteredIngredientsHandler = useCallback(filteredIngredient => {
     dispatch({type: 'SET', ingredients: filteredIngredient});
   }, []);
   const removeIngredientHandler = useCallback(ingredientId => {
-    sendRequest(`https://react-hook-update-c7bff.firebaseio.com/ingredients/${ingredientId}.json`, 'DELETE');
+    sendRequest(`https://react-hook-update-c7bff.firebaseio.com/ingredients/${ingredientId}.json`,
+                'DELETE',
+                null,
+                ingredientId,
+                'REMOVE_INGREDIENT');
   }, [sendRequest]);
 
   const clearError = useCallback(() => {
